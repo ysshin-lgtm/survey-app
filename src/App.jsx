@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMljAmamA80qLQdyZYws81-X9hgkRYUh-2LZwx52ZBDbD4xMLT8cW2VjQjZXZmi1cN3Q/exec";
+const APPS_SCRIPT_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 
 const surveyTitle = "<아고라(Agora)> 수강 신청 및 수업 참여 방식 조사";
 
@@ -546,10 +546,6 @@ export default function App() {
           {surveyDescription.map((line, idx) => (
             <p key={idx} style={styles.desc}>{line}</p>
           ))}
-
-          <div style={styles.infoBox}>
-            이 버전은 Google Sheets 연동용입니다. App.jsx 상단의 <strong>APPS_SCRIPT_URL</strong> 자리에 Google Apps Script 웹앱 URL을 넣으면 제출 시 시트로 저장됩니다.
-          </div>
 
           <div style={styles.progressMeta}>
             <span>작성 진행률</span>

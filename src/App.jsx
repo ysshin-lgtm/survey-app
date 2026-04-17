@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 
-const APPS_SCRIPT_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMljAmamA80qLQdyZYws81-X9hgkRYUh-2LZwx52ZBDbD4xMLT8cW2VjQjZXZmi1cN3Q/exec";
 
 const surveyTitle = "<아고라(Agora)> 수강 신청 및 수업 참여 방식 조사";
 

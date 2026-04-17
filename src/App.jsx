@@ -1,304 +1,584 @@
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
+
+const surveyTitle = "<아고라(Agora)> 수강 신청 및 수업 참여 방식 조사";
+
+const surveyDescription = [
+  "2025년부터 서울과학종합대학원(aSSIST University) 박사과정에서는 ‘연구주도학습(Research-driven learning) 비전을 실현하기 위해 교수님 및 재학생분들께서 강의를 개설하고 학생과 함께 연구를 완성하실 수 있는 ‘아고라(Agora)’ 수업을 개설하고 있습니다.",
+  "이번 아고라 수강신청 대상은 총 30개 과목이며, 최대 3학점까지 선택적으로 이수하실 수 있습니다.",
+  "아래 설문에 포함된 수업 계획을 참고하시어 희망 과목을 선택하시되, 수업 일정을 참고하시어 수강 가능한 경우 신청해주시기 바랍니다.",
+  "각 아고라 일정별로 전체 순위를 필수로 선택 부탁 드립니다.",
+  "박사님들께서 신청하신 결과에 따라 15명 이상이 신청한 과목이 개설됩니다. 더불어 박사님들께서 희망하시는 과목을 최대한 많이 개설하기 위하여 1순위에서 개설 기준을 충족하지 못한 경우 후순위(2, 3순위 등) 득표수를 추가로 집계하여 개설 확정 과목을 결정할 예정입니다.",
+  "(이에 따라 1순위로 선택하신 과목으로 수강이 확정되지 않을 수도 있는 점 양해 부탁 드립니다.)",
+  "원활한 수업진행을 위해 반드시 기한 내 설문에 응답하여 주시기 바랍니다.",
+  "아고라 수업일정 : 1개 수업은 1일(7.5시간)+1일(7.5시간)로 1학점 구성",
+  "5월 2일(토), 5월 9일(토)",
+  "5월 3일(일), 5월 16일(토)",
+  "5월 10일(일), 5월 17일(일)",
+  "수강 신청 설문 기한: 4/22(수)까지",
+];
+
+const programs = ["석사과정", "박사과정", "대박사과정"];
+
+const schedules = [
+  {
+    id: "schedule1",
+    sectionTitle: "첫 번째 수업 참석 방식 (5월 2일 + 5월 9일)",
+    attendanceQuestion: "5월 2일(토), 5월 9일(토)에 수업에 참석하실 방식을 선택하여 주시기 바랍니다.",
+    attendanceOptions: [
+      "전체 오프라인",
+      "전체 온라인",
+      "2일 오프라인 / 9일 온라인",
+      "2일 온라인 / 9일 오프라인",
+      "비희망",
+    ],
+    rankingQuestion: "5월 2일(토), 5월 9일(토)에 진행되는 강의를 최대 7순위까지 신청할 수 있습니다.",
+    maxRank: 7,
+    instructors: ["송현희", "조민수", "박승재", "박수현", "윤여훈", "박영준", "오성호"],
+  },
+  {
+    id: "schedule2",
+    sectionTitle: "첫 번째 수업 참석 방식 (5월 3일 + 5월 16일)",
+    attendanceQuestion: "5월 3일(일), 5월 16일(토)에 수업에 참석하실 방식을 선택하여 주시기 바랍니다.",
+    attendanceOptions: [
+      "전체 오프라인",
+      "전체 온라인",
+      "3일 오프라인 / 16일 온라인",
+      "3일 온라인 / 16일 오프라인",
+      "비희망",
+    ],
+    rankingQuestion: "5월 3일(일), 5월 16일(토)에 진행되는 강의를 최대 6순위까지 신청할 수 있습니다.",
+    maxRank: 6,
+    instructors: ["임현성", "선영택", "임기범", "서성균", "김경석", "오서현"],
+  },
+  {
+    id: "schedule3",
+    sectionTitle: "첫 번째 수업 참석 방식 (5월 10일 + 5월 17일)",
+    attendanceQuestion: "5월 10일(일), 5월 17일(일)에 수업에 참석하실 방식을 선택하여 주시기 바랍니다.",
+    attendanceOptions: [
+      "전체 오프라인",
+      "전체 온라인",
+      "10일 오프라인 / 17일 온라인",
+      "10일 온라인 / 17일 오프라인",
+      "비희망",
+    ],
+    rankingQuestion: "5월 10일(일), 5월 17일(일)에 진행되는 강의를 최대 9순위까지 신청할 수 있습니다.",
+    maxRank: 9,
+    instructors: ["김명수", "이병욱", "이민호", "송동근", "김임환", "박수진", "신호상", "임선경", "현한나"],
+  },
+];
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)",
+    padding: "24px",
+    fontFamily: "Arial, sans-serif",
+    color: "#0f172a",
+  },
+  container: {
+    maxWidth: "1100px",
+    margin: "0 auto",
+  },
+  card: {
+    background: "#ffffff",
+    borderRadius: "24px",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+    padding: "28px",
+    border: "1px solid #e2e8f0",
+  },
+  title: {
+    fontSize: "32px",
+    fontWeight: 800,
+    marginBottom: "12px",
+    lineHeight: 1.25,
+  },
+  desc: {
+    fontSize: "15px",
+    lineHeight: 1.8,
+    color: "#475569",
+    margin: "0 0 8px 0",
+  },
+  label: {
+    display: "block",
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#1e293b",
+    marginBottom: "8px",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    border: "1px solid #cbd5e1",
+    fontSize: "14px",
+    boxSizing: "border-box",
+  },
+  select: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    border: "1px solid #cbd5e1",
+    fontSize: "14px",
+    boxSizing: "border-box",
+    background: "#fff",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "110px",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    border: "1px solid #cbd5e1",
+    fontSize: "14px",
+    boxSizing: "border-box",
+    resize: "vertical",
+  },
+  grid3: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "16px",
+    marginTop: "24px",
+  },
+  grid2: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "16px",
+  },
+  section: {
+    marginTop: "28px",
+    padding: "22px",
+    border: "1px solid #e2e8f0",
+    borderRadius: "20px",
+    background: "#ffffff",
+  },
+  sectionTitle: {
+    fontSize: "22px",
+    fontWeight: 800,
+    margin: "0 0 16px 0",
+  },
+  questionText: {
+    fontSize: "15px",
+    color: "#334155",
+    marginBottom: "10px",
+    fontWeight: 600,
+  },
+  radioWrap: {
+    display: "grid",
+    gap: "10px",
+    marginBottom: "20px",
+  },
+  radioItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    border: "1px solid #e2e8f0",
+    borderRadius: "14px",
+    padding: "12px 14px",
+  },
+  rankBox: {
+    border: "1px solid #e2e8f0",
+    borderRadius: "16px",
+    padding: "14px",
+    background: "#fff",
+  },
+  progressMeta: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "22px",
+    marginBottom: "8px",
+    fontSize: "14px",
+    color: "#475569",
+  },
+  progressBar: {
+    width: "100%",
+    height: "12px",
+    background: "#e2e8f0",
+    borderRadius: "999px",
+    overflow: "hidden",
+  },
+  progressFill: (progress) => ({
+    width: `${progress}%`,
+    height: "100%",
+    background: "#2563eb",
+    transition: "width 0.2s ease",
+  }),
+  error: {
+    color: "#dc2626",
+    fontSize: "14px",
+    fontWeight: 600,
+    marginTop: "12px",
+  },
+  buttonRow: {
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginTop: "24px",
+  },
+  button: {
+    padding: "12px 18px",
+    borderRadius: "16px",
+    border: "none",
+    background: "#0f172a",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+  buttonSecondary: {
+    padding: "12px 18px",
+    borderRadius: "16px",
+    border: "1px solid #cbd5e1",
+    background: "#fff",
+    color: "#0f172a",
+    fontWeight: 700,
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed",
+  },
+  successIcon: {
+    width: "68px",
+    height: "68px",
+    borderRadius: "999px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#dcfce7",
+    color: "#166534",
+    fontSize: "30px",
+    fontWeight: 800,
+    margin: "0 auto 16px auto",
+  },
+  summaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "16px",
+    marginTop: "24px",
+  },
+  summaryBox: {
+    border: "1px solid #e2e8f0",
+    borderRadius: "16px",
+    padding: "14px",
+  },
+  summaryLabel: {
+    fontSize: "13px",
+    color: "#64748b",
+    marginBottom: "6px",
+  },
+};
+
+function isUnique(values) {
+  const filtered = values.filter(Boolean);
+  return new Set(filtered).size === filtered.length;
+}
+
+function getProgressCount(formData) {
+  let count = 0;
+  if (formData.program) count += 1;
+  if (formData.name.trim()) count += 1;
+  if (formData.email.trim()) count += 1;
+
+  schedules.forEach((schedule) => {
+    if (formData.attendance[schedule.id]) count += 1;
+    schedule.instructors.forEach((name) => {
+      if (formData.rankings[schedule.id]?.[name]) count += 1;
+    });
+  });
+
+  return count;
+}
 
 export default function App() {
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWQD-rUvbG-i4CZeBWZGLSjD5fXEALT_eXPRlCbJKxKghMYayfLr9RAObVsyJpVN2Lfw/exec";
-
-  const [form, setForm] = useState({
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
     program: "",
     name: "",
     email: "",
-    participation: "",
-    subject: "",
+    note: "",
+    attendance: {
+      schedule1: "",
+      schedule2: "",
+      schedule3: "",
+    },
+    rankings: {
+      schedule1: {},
+      schedule2: {},
+      schedule3: {},
+    },
   });
 
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const totalCount = 3 + schedules.reduce((sum, schedule) => sum + 1 + schedule.instructors.length, 0);
+  const progress = Math.round((getProgressCount(formData) / totalCount) * 100);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({
+  const rankingValidity = useMemo(() => {
+    return schedules.every((schedule) => {
+      const selected = schedule.instructors.map((name) => formData.rankings[schedule.id]?.[name] || "");
+      return selected.every(Boolean) && isUnique(selected);
+    });
+  }, [formData]);
+
+  const attendanceValidity = schedules.every((schedule) => Boolean(formData.attendance[schedule.id]));
+  const basicValidity = Boolean(formData.program && formData.name.trim() && formData.email.trim());
+  const canSubmit = basicValidity && attendanceValidity && rankingValidity;
+
+  const setRanking = (scheduleId, name, value) => {
+    setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      rankings: {
+        ...prev.rankings,
+        [scheduleId]: {
+          ...prev.rankings[scheduleId],
+          [name]: value,
+        },
+      },
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setSubmitted(false);
-
-    try {
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(form),
-      });
-
-      setSubmitted(true);
-
-      setForm({
-        program: "",
-        name: "",
-        email: "",
-        participation: "",
-        subject: "",
-      });
-    } catch (error) {
-      alert("제출 중 오류가 발생했습니다.");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const setAttendance = (scheduleId, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      attendance: {
+        ...prev.attendance,
+        [scheduleId]: value,
+      },
+    }));
   };
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#f5f7fb",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "24px",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "700px",
-          backgroundColor: "#ffffff",
-          borderRadius: "18px",
-          padding: "32px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "28px",
-            marginBottom: "10px",
-            textAlign: "center",
-          }}
-        >
-          아고라 수강 신청 및 수업 참여 방식 조사
-        </h1>
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    setSubmitted(true);
+  };
 
-        <p
-          style={{
-            textAlign: "center",
-            color: "#666",
-            marginBottom: "30px",
-            lineHeight: "1.6",
-          }}
-        >
-          아래 문항에 응답해 주세요.
-        </p>
+  const handleReset = () => {
+    setSubmitted(false);
+    setFormData({
+      program: "",
+      name: "",
+      email: "",
+      note: "",
+      attendance: {
+        schedule1: "",
+        schedule2: "",
+        schedule3: "",
+      },
+      rankings: {
+        schedule1: {},
+        schedule2: {},
+        schedule3: {},
+      },
+    });
+  };
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "22px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontWeight: "bold",
-              }}
-            >
-              1. 현재 소속된 과정
-            </label>
+  const handleDownload = () => {
+    const payload = {
+      title: surveyTitle,
+      submittedAt: new Date().toLocaleString(),
+      response: formData,
+    };
 
-            <label style={{ display: "block", marginBottom: "8px" }}>
-              <input
-                type="radio"
-                name="program"
-                value="석사"
-                checked={form.program === "석사"}
-                onChange={handleChange}
-                required
-              />{" "}
-              석사
-            </label>
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "agora-survey-response.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-            <label style={{ display: "block", marginBottom: "8px" }}>
-              <input
-                type="radio"
-                name="program"
-                value="박사"
-                checked={form.program === "박사"}
-                onChange={handleChange}
-              />{" "}
-              박사
-            </label>
+  if (submitted) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.container}>
+          <div style={styles.card}>
+            <div style={styles.successIcon}>✓</div>
+            <h1 style={{ ...styles.title, textAlign: "center" }}>설문이 제출되었습니다</h1>
+            <p style={{ ...styles.desc, textAlign: "center" }}>응답 내용을 아래에서 확인하거나 JSON 파일로 저장할 수 있습니다.</p>
 
-            <label style={{ display: "block" }}>
-              <input
-                type="radio"
-                name="program"
-                value="대박사"
-                checked={form.program === "대박사"}
-                onChange={handleChange}
-              />{" "}
-              대박사
-            </label>
-          </div>
+            <div style={styles.summaryGrid}>
+              <div style={styles.summaryBox}>
+                <div style={styles.summaryLabel}>과정</div>
+                <div>{formData.program}</div>
+              </div>
+              <div style={styles.summaryBox}>
+                <div style={styles.summaryLabel}>성함</div>
+                <div>{formData.name}</div>
+              </div>
+              <div style={styles.summaryBox}>
+                <div style={styles.summaryLabel}>이메일</div>
+                <div>{formData.email}</div>
+              </div>
+            </div>
 
-          <div style={{ marginBottom: "22px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontWeight: "bold",
-              }}
-            >
-              2. 성함
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="성함을 입력해 주세요"
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-                fontSize: "14px",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: "22px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontWeight: "bold",
-              }}
-            >
-              3. 이메일
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="이메일을 입력해 주세요"
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-                fontSize: "14px",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: "22px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontWeight: "bold",
-              }}
-            >
-              4. 수업 참여 방식
-            </label>
-
-            {[
-              "오프라인",
-              "온라인",
-              "1차 오프라인, 2차 온라인",
-              "1차 온라인, 2차 오프라인",
-              "비희망",
-            ].map((option) => (
-              <label
-                key={option}
-                style={{ display: "block", marginBottom: "8px" }}
-              >
-                <input
-                  type="radio"
-                  name="participation"
-                  value={option}
-                  checked={form.participation === option}
-                  onChange={handleChange}
-                  required
-                />{" "}
-                {option}
-              </label>
+            {schedules.map((schedule) => (
+              <div key={schedule.id} style={styles.section}>
+                <h2 style={styles.sectionTitle}>{schedule.sectionTitle}</h2>
+                <div style={styles.summaryBox}>
+                  <div style={styles.summaryLabel}>참석 방식</div>
+                  <div>{formData.attendance[schedule.id]}</div>
+                </div>
+                <div style={{ ...styles.grid2, marginTop: "16px" }}>
+                  {schedule.instructors.map((name) => (
+                    <div key={name} style={styles.summaryBox}>
+                      <div style={styles.summaryLabel}>{name}</div>
+                      <div>{formData.rankings[schedule.id]?.[name]}순위</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
+
+            {formData.note && (
+              <div style={styles.section}>
+                <h2 style={styles.sectionTitle}>추가 메모</h2>
+                <div>{formData.note}</div>
+              </div>
+            )}
+
+            <div style={styles.buttonRow}>
+              <button style={styles.button} onClick={handleDownload}>응답 저장</button>
+              <button style={styles.buttonSecondary} onClick={handleReset}>다시 작성</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>{surveyTitle}</h1>
+          {surveyDescription.map((line, idx) => (
+            <p key={idx} style={styles.desc}>{line}</p>
+          ))}
+
+          <div style={styles.progressMeta}>
+            <span>작성 진행률</span>
+            <span>{progress}%</span>
+          </div>
+          <div style={styles.progressBar}>
+            <div style={styles.progressFill(progress)} />
           </div>
 
-          <div style={{ marginBottom: "24px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontWeight: "bold",
-              }}
+          <div style={styles.grid3}>
+            <div>
+              <label style={styles.label}>현재 소속된 과정을 선택해주시기 바랍니다. *</label>
+              <select
+                style={styles.select}
+                value={formData.program}
+                onChange={(e) => setFormData((prev) => ({ ...prev, program: e.target.value }))}
+              >
+                <option value="">선택하세요</option>
+                {programs.map((program) => (
+                  <option key={program} value={program}>{program}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={styles.label}>성함을 쓰시오 *</label>
+              <input
+                style={styles.input}
+                value={formData.name}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="성함을 입력하세요"
+              />
+            </div>
+
+            <div>
+              <label style={styles.label}>이메일을 쓰시오 *</label>
+              <input
+                style={styles.input}
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="이메일을 입력하세요"
+              />
+            </div>
+          </div>
+
+          {schedules.map((schedule) => {
+            const selectedRanks = schedule.instructors.map((name) => formData.rankings[schedule.id]?.[name] || "");
+            const hasDuplicate = !isUnique(selectedRanks);
+            const rankOptions = Array.from({ length: schedule.maxRank }, (_, i) => String(i + 1));
+
+            return (
+              <div key={schedule.id} style={styles.section}>
+                <h2 style={styles.sectionTitle}>{schedule.sectionTitle}</h2>
+
+                <div style={styles.questionText}>{schedule.attendanceQuestion}</div>
+                <div style={styles.radioWrap}>
+                  {schedule.attendanceOptions.map((option) => (
+                    <label key={option} style={styles.radioItem}>
+                      <input
+                        type="radio"
+                        name={`attendance-${schedule.id}`}
+                        value={option}
+                        checked={formData.attendance[schedule.id] === option}
+                        onChange={(e) => setAttendance(schedule.id, e.target.value)}
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div style={styles.questionText}>{schedule.rankingQuestion}</div>
+                <div style={styles.grid2}>
+                  {schedule.instructors.map((name) => (
+                    <div key={name} style={styles.rankBox}>
+                      <label style={styles.label}>{name}</label>
+                      <select
+                        style={styles.select}
+                        value={formData.rankings[schedule.id]?.[name] || ""}
+                        onChange={(e) => setRanking(schedule.id, name, e.target.value)}
+                      >
+                        <option value="">순위를 선택하세요</option>
+                        {rankOptions.map((rank) => (
+                          <option key={rank} value={rank}>{rank}순위</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                {!formData.attendance[schedule.id] && (
+                  <div style={styles.error}>참석 방식을 선택해 주세요.</div>
+                )}
+                {hasDuplicate && (
+                  <div style={styles.error}>같은 일정 안에서는 순위를 중복해서 선택할 수 없습니다.</div>
+                )}
+              </div>
+            );
+          })}
+
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>추가 메모</h2>
+            <textarea
+              style={styles.textarea}
+              value={formData.note}
+              onChange={(e) => setFormData((prev) => ({ ...prev, note: e.target.value }))}
+              placeholder="필요한 경우 추가 의견을 입력해 주세요"
+            />
+          </div>
+
+          {!basicValidity && <div style={styles.error}>과정, 성함, 이메일은 필수입니다.</div>}
+          {!attendanceValidity && <div style={styles.error}>각 일정의 참석 방식을 모두 선택해 주세요.</div>}
+          {!rankingValidity && <div style={styles.error}>각 일정 안의 강의 순위는 빠짐없이, 중복 없이 선택해 주세요.</div>}
+
+          <div style={styles.buttonRow}>
+            <button
+              style={{ ...styles.button, ...(canSubmit ? {} : styles.buttonDisabled) }}
+              onClick={handleSubmit}
+              disabled={!canSubmit}
             >
-              5. 희망하는 과목 선택
-            </label>
-
-            <select
-              name="subject"
-              value={form.subject}
-              onChange={handleChange}
-              required
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "10px",
-                border: "1px solid #ccc",
-                fontSize: "14px",
-                boxSizing: "border-box",
-              }}
-            >
-              <option value="">선택해 주세요</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
+              제출하기
+            </button>
+            <button style={styles.buttonSecondary} onClick={handleReset}>초기화</button>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "14px",
-              backgroundColor: loading ? "#94a3b8" : "#2563eb",
-              color: "#fff",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "16px",
-              fontWeight: "bold",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-          >
-            {loading ? "제출 중..." : "제출하기"}
-          </button>
-        </form>
-
-        {submitted && (
-          <div
-            style={{
-              marginTop: "28px",
-              padding: "20px",
-              backgroundColor: "#ecfdf5",
-              borderRadius: "12px",
-              border: "1px solid #a7f3d0",
-            }}
-          >
-            제출이 완료되었습니다. Google Sheets에 누적 저장됩니다.
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

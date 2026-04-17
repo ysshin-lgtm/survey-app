@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMljAmamA80qLQdyZYws81-X9hgkRYUh-2LZwx52ZBDbD4xMLT8cW2VjQjZXZmi1cN3Q/exec";
+
 const surveyTitle = "<아고라(Agora)> 수강 신청 및 수업 참여 방식 조사";
 
 const surveyDescription = [
@@ -100,6 +102,16 @@ const styles = {
     color: "#000000",
     margin: "0 0 8px 0",
   },
+  infoBox: {
+    marginTop: "16px",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    fontSize: "13px",
+    lineHeight: 1.6,
+    color: "#000000",
+  },
   label: {
     display: "block",
     fontSize: "14px",
@@ -188,8 +200,7 @@ const styles = {
     border: "1px solid #e2e8f0",
     borderRadius: "16px",
     padding: "14px",
-    background: "#ffffff",
-    color: "#000000",
+    background: "#fff",
   },
   progressMeta: {
     display: "flex",
@@ -214,6 +225,12 @@ const styles = {
   }),
   error: {
     color: "#b91c1c",
+    fontSize: "14px",
+    fontWeight: 600,
+    marginTop: "12px",
+  },
+  success: {
+    color: "#166534",
     fontSize: "14px",
     fontWeight: 600,
     marginTop: "12px",
@@ -302,8 +319,31 @@ function getProgressCount(formData) {
   return count;
 }
 
+function flattenPayload(formData) {
+  const row = {
+    timestamp: new Date().toLocaleString("ko-KR"),
+    program: formData.program,
+    name: formData.name,
+    email: formData.email,
+    note: formData.note,
+  };
+
+  schedules.forEach((schedule, index) => {
+    const prefix = `schedule${index + 1}`;
+    row[`${prefix}_attendance`] = formData.attendance[schedule.id] || "";
+
+    schedule.instructors.forEach((instructor) => {
+      row[`${prefix}_${instructor}`] = formData.rankings[schedule.id]?.[instructor] || "";
+    });
+  });
+
+  return row;
+}
+
 export default function App() {
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [formData, setFormData] = useState({
     program: "",
     name: "",
@@ -333,7 +373,7 @@ export default function App() {
 
   const attendanceValidity = schedules.every((schedule) => Boolean(formData.attendance[schedule.id]));
   const basicValidity = Boolean(formData.program && formData.name.trim() && formData.email.trim());
-  const canSubmit = basicValidity && attendanceValidity && rankingValidity;
+  const canSubmit = basicValidity && attendanceValidity && rankingValidity && !isSubmitting;
 
   const setRanking = (scheduleId, name, value) => {
     setFormData((prev) => ({
@@ -358,13 +398,50 @@ export default function App() {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
-    setSubmitted(true);
+
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE")) {
+      setSubmitError("Google Sheets 연동 URL이 아직 설정되지 않았습니다. App.jsx 상단의 APPS_SCRIPT_URL에 Apps Script 웹앱 주소를 넣어주세요.");
+      return;
+    }
+
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    const payload = {
+      title: surveyTitle,
+      submittedAt: new Date().toISOString(),
+      response: formData,
+      flatRow: flattenPayload(formData),
+    };
+
+    try {
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text || "Google Sheets 저장에 실패했습니다.");
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(error.message || "제출 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     setSubmitted(false);
+    setSubmitError("");
     setFormData({
       program: "",
       name: "",
@@ -388,6 +465,7 @@ export default function App() {
       title: surveyTitle,
       submittedAt: new Date().toLocaleString(),
       response: formData,
+      flatRow: flattenPayload(formData),
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -408,7 +486,7 @@ export default function App() {
           <div style={styles.card}>
             <div style={styles.successIcon}>✓</div>
             <h1 style={{ ...styles.title, textAlign: "center" }}>설문이 제출되었습니다</h1>
-            <p style={{ ...styles.desc, textAlign: "center" }}>응답 내용을 아래에서 확인하거나 JSON 파일로 저장할 수 있습니다.</p>
+            <p style={{ ...styles.desc, textAlign: "center" }}>응답 내용이 Google Sheets로 전송되도록 구성되어 있습니다. 아래에서 제출 내용을 다시 확인할 수 있습니다.</p>
 
             <div style={styles.summaryGrid}>
               <div style={styles.summaryBox}>
@@ -451,7 +529,7 @@ export default function App() {
             )}
 
             <div style={styles.buttonRow}>
-              <button style={styles.button} onClick={handleDownload}>응답 저장</button>
+              <button style={styles.buttonSecondary} onClick={handleDownload}>응답 JSON 저장</button>
               <button style={styles.buttonSecondary} onClick={handleReset}>다시 작성</button>
             </div>
           </div>
@@ -468,6 +546,10 @@ export default function App() {
           {surveyDescription.map((line, idx) => (
             <p key={idx} style={styles.desc}>{line}</p>
           ))}
+
+          <div style={styles.infoBox}>
+            이 버전은 Google Sheets 연동용입니다. App.jsx 상단의 <strong>APPS_SCRIPT_URL</strong> 자리에 Google Apps Script 웹앱 URL을 넣으면 제출 시 시트로 저장됩니다.
+          </div>
 
           <div style={styles.progressMeta}>
             <span>작성 진행률</span>
@@ -580,6 +662,10 @@ export default function App() {
           {!basicValidity && <div style={styles.error}>과정, 성함, 이메일은 필수입니다.</div>}
           {!attendanceValidity && <div style={styles.error}>각 일정의 참석 방식을 모두 선택해 주세요.</div>}
           {!rankingValidity && <div style={styles.error}>각 일정 안의 강의 순위는 빠짐없이, 중복 없이 선택해 주세요.</div>}
+          {submitError && <div style={styles.error}>{submitError}</div>}
+          {!submitError && APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes("PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE") && (
+            <div style={styles.success}>Google Sheets 연동 URL이 설정되었습니다.</div>
+          )}
 
           <div style={styles.buttonRow}>
             <button
@@ -587,9 +673,10 @@ export default function App() {
               onClick={handleSubmit}
               disabled={!canSubmit}
             >
-              제출하기
+              {isSubmitting ? "제출 중..." : "제출하기"}
             </button>
             <button style={styles.buttonSecondary} onClick={handleReset}>초기화</button>
+            <button style={styles.buttonSecondary} onClick={handleDownload}>테스트용 JSON 저장</button>
           </div>
         </div>
       </div>
